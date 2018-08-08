@@ -37,7 +37,7 @@ poisson_spike_source = sim.Population(500, sim.SpikeSourcePoisson(
     rate=50, duration=10000), label='poisson_source')
 
 # spike_times = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
-spike_times = [11000]
+spike_times = [sim_time//2]
 spike_source_array = sim.Population(125, sim.SpikeSourceArray,
                                     {'spike_times': spike_times},
                                     label='spike_source')
@@ -158,7 +158,7 @@ from spynnaker8.utilities.neo_convertor import convert_spikes
 exc_spikes = convert_spikes(exc_data)
 inh_spikes = convert_spikes(inh_data)
 
-mlib.rcParams.update({'font.size': 40,
+mlib.rcParams.update({'font.size': 30,
                       'font.family': 'Times New Roman'})
 
 
@@ -173,8 +173,8 @@ def plot_spikes(exc_spikes, inh_spikes, title, simtime=sim_time):
     ax1.set_xlabel('Time(ms)')
     ax1.set_ylabel('Neuron ID')
     ax1.set_title(title)
-    plt.savefig(title + ".png", dpi=800)
     plt.tight_layout()
+    plt.savefig(title + ".png", dpi=800)
     plt.show()
 
 plot_spikes(exc_spikes, inh_spikes, "Random Balanced Network")
