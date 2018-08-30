@@ -5,10 +5,10 @@ sim.setup(timestep=1)
 
 
 # Spike input
-poisson_spike_source = sim.Population(500, sim.SpikeSourcePoisson(
+poisson_spike_source = sim.Population(250, sim.SpikeSourcePoisson(
     rate=50, duration=5000), label='poisson_source')
 
-spike_source_array = sim.Population(125, sim.SpikeSourceArray,
+spike_source_array = sim.Population(250, sim.SpikeSourceArray,
                                     {'spike_times': [1000]},
                                     label='spike_source')
 
@@ -46,17 +46,17 @@ delay_distribution = sim.RandomDistribution('uniform', [1, 10], rng=rng)
 
 # Spike input projections
 spike_source_projection = sim.Projection(spike_source_array, pop_exc,
-    sim.FixedProbabilityConnector(p_connect=0.1),
+    sim.FixedProbabilityConnector(p_connect=0.05),
     synapse_type=sim.StaticSynapse(weight=0.1, delay=delay_distribution),
     receptor_type='excitatory')
 
 # Poisson source projections
 poisson_projection_exc = sim.Projection(poisson_spike_source, pop_exc,
-    sim.FixedProbabilityConnector(p_connect=0.1),
+    sim.FixedProbabilityConnector(p_connect=0.2),
     synapse_type=sim.StaticSynapse(weight=0.06, delay=delay_distribution),
     receptor_type='excitatory')
 poisson_projection_inh = sim.Projection(poisson_spike_source, pop_inh,
-    sim.FixedProbabilityConnector(p_connect=0.1),
+    sim.FixedProbabilityConnector(p_connect=0.2),
     synapse_type=sim.StaticSynapse(weight=0.03, delay=delay_distribution),
     receptor_type='excitatory')
 
@@ -112,7 +112,7 @@ from spynnaker8.utilities.neo_convertor import convert_spikes
 exc_spikes = convert_spikes(exc_data)
 inh_spikes = convert_spikes(inh_data)
 
-mlib.rcParams.update({'font.size': 20,
+mlib.rcParams.update({'font.size': 24,
                       'font.family': 'Times New Roman'})
 
 
@@ -128,7 +128,7 @@ def plot_spikes(exc_spikes, inh_spikes, title, simtime=5000):
     ax1.set_ylabel('Neuron ID')
     ax1.set_title(title)
     plt.tight_layout()
-    plt.savefig(title + ".png", dpi=800)
+    plt.savefig('rbn' + ".pdf", dpi=800, format='pdf')
     plt.show()
 
 plot_spikes(exc_spikes, inh_spikes, "Random Balanced Network")
