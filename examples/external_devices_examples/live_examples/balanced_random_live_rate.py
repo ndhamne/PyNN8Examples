@@ -68,7 +68,9 @@ pop_exc.record("spikes")
 p.external_devices.add_poisson_live_rate_control(pop_input)
 
 poisson_control = p.external_devices.SpynnakerPoissonControlConnection(
-    poisson_labels=[pop_input.label])
+    poisson_labels=[pop_input.label], local_port=None)
+p.external_devices.add_database_socket_address(
+    None, poisson_control.local_port, None)
 
 
 def start_callback(label, connection):
