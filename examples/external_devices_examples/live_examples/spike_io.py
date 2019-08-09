@@ -6,9 +6,6 @@ from threading import Condition
 from pyNN.utility.plotting import Figure, Panel
 import matplotlib.pyplot as plt
 
-# boolean allowing users to use python or c vis
-using_c_vis = False
-
 # initial call to set up the front end (pynn requirement)
 Frontend.setup(timestep=1.0, min_delay=1.0, max_delay=144.0)
 
@@ -19,7 +16,7 @@ n_neurons = 100
 run_time = 8000
 weight_to_spike = 2.0
 
-# neural parameters of the ifcur model used to respond to injected spikes.
+# neural parameters of the LIF model used to respond to injected spikes.
 # (cell params for a synfire chain)
 cell_params_lif = {'cm': 0.25,
                    'i_offset': 0.0,
@@ -76,13 +73,21 @@ pop_forward = Frontend.Population(
 pop_backward = Frontend.Population(
     n_neurons, Frontend.IF_curr_exp(**cell_params_lif), label='pop_backward')
 
+# Set up the live connection for sending spikes
+live_spikes_connection_send = \
+    Frontend.external_devices.SpynnakerLiveSpikesConnection(
+        receive_labels=None, local_port=None,
+        send_labels=["spike_injector_forward", "spike_injector_backward"])
+
 # Create injection populations
 injector_forward = Frontend.Population(
-    n_neurons, Frontend.external_devices.SpikeInjector(),
+    n_neurons, Frontend.external_devices.SpikeInjector(
+        database_notify_port_num=live_spikes_connection_send.local_port),
     label='spike_injector_forward',
     additional_parameters=cell_params_spike_injector_with_key)
 injector_backward = Frontend.Population(
-    n_neurons, Frontend.external_devices.SpikeInjector(),
+    n_neurons, Frontend.external_devices.SpikeInjector(
+        database_notify_port_num=live_spikes_connection_send.local_port),
     label='spike_injector_backward',
     additional_parameters=cell_params_spike_injector)
 
@@ -108,17 +113,23 @@ Frontend.Projection(pop_backward, pop_backward,
                     Frontend.FromListConnector(loop_backward))
 
 # record spikes from the synfire chains so that we can read off valid results
-# in a safe way afterwards, and verify the behavior
+# in a safe way afterwards, and verify the behaviour
 pop_forward.record('spikes')
 pop_backward.record('spikes')
+
+# Set up the live connection for receiving spikes
+live_spikes_connection_receive = \
+    Frontend.external_devices.SpynnakerLiveSpikesConnection(
+        receive_labels=["pop_forward", "pop_backward"],
+        local_port=None, send_labels=None)
 
 # Activate the sending of live spikes
 Frontend.external_devices.activate_live_output_for(
     pop_forward, database_notify_host="localhost",
-    database_notify_port_num=19996)
+    database_notify_port_num=live_spikes_connection_receive.local_port)
 Frontend.external_devices.activate_live_output_for(
     pop_backward, database_notify_host="localhost",
-    database_notify_port_num=19996)
+    database_notify_port_num=live_spikes_connection_receive.local_port)
 
 # Create a condition to avoid overlapping prints
 print_condition = Condition()
@@ -161,12 +172,6 @@ def receive_spikes(label, time, neuron_ids):
         print_condition.release()
 
 
-# Set up the live connection for sending spikes
-live_spikes_connection_send = \
-    Frontend.external_devices.SpynnakerLiveSpikesConnection(
-        receive_labels=None, local_port=19999,
-        send_labels=["spike_injector_forward", "spike_injector_backward"])
-
 # Set up callbacks to occur at initialisation
 live_spikes_connection_send.add_init_callback(
     "spike_injector_forward", init_pop)
@@ -179,21 +184,11 @@ live_spikes_connection_send.add_start_resume_callback(
 live_spikes_connection_send.add_start_resume_callback(
     "spike_injector_backward", send_input_backward)
 
-if not using_c_vis:
-
-    # if not using the c visualiser, then a new spynnaker live spikes
-    # connection is created to define that there is a python function which
-    # receives the spikes.
-    live_spikes_connection_receive = \
-        Frontend.external_devices.SpynnakerLiveSpikesConnection(
-            receive_labels=["pop_forward", "pop_backward"],
-            local_port=19996, send_labels=None)
-
-    # Set up callbacks to occur when spikes are received
-    live_spikes_connection_receive.add_receive_callback(
-        "pop_forward", receive_spikes)
-    live_spikes_connection_receive.add_receive_callback(
-        "pop_backward", receive_spikes)
+# Set up callbacks to occur when spikes are received
+live_spikes_connection_receive.add_receive_callback(
+    "pop_forward", receive_spikes)
+live_spikes_connection_receive.add_receive_callback(
+    "pop_backward", receive_spikes)
 
 
 # Run the simulation on spiNNaker

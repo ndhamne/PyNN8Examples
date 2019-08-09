@@ -14,12 +14,12 @@ weight_exc = 0.1
 weight_inh = -5.0 * weight_exc
 weight_input = 0.001
 
-pop_input = p.Population(100, p.SpikeSourcePoisson(rate=0), label="Input")
+pop_input = p.Population(100, p.SpikeSourcePoisson(rate=0.0),
+                         additional_parameters={"max_rate": 50.0},
+                         label="Input")
 
-pop_exc = p.Population(n_exc, p.IF_curr_exp, label="Excitatory",
-                       additional_parameters={"spikes_per_second": 100})
-pop_inh = p.Population(n_inh, p.IF_curr_exp, label="Inhibitory",
-                       additional_parameters={"spikes_per_second": 100})
+pop_exc = p.Population(n_exc, p.IF_curr_exp, label="Excitatory")
+pop_inh = p.Population(n_inh, p.IF_curr_exp, label="Inhibitory")
 stim_exc = p.Population(
     n_exc, p.SpikeSourcePoisson(rate=1000.0), label="Stim_Exc")
 stim_inh = p.Population(
@@ -76,6 +76,7 @@ p.external_devices.add_database_socket_address(
 def start_callback(label, connection):
     for rate in [50, 10, 20]:
         time.sleep(10.0)
+        print("Setting rate to {}".format(rate))
         connection.set_rates(label, [(i, rate) for i in range(100)])
 
 
