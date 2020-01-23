@@ -27,7 +27,7 @@ neuron = pynn.Population(1,
 in_proj = pynn.Projection(input_pop,
                           neuron,
                           pynn.OneToOneConnector(),
-                          pynn.StaticSynapse(weight=[-0.5], delay=[0]),
+                          pynn.StaticSynapse(weight=[-0.5], delay=[0]), # delay here refers to the synapse index (out of 250 in this case)
                           receptor_type='excitatory')
 
 
